@@ -4,7 +4,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const encrypt = require("mongoose-encryption"); //second level of encryption
+//const encrypt = require("mongoose-encryption"); //second level of encryption
+const md5 = require("md5");
 
 const app= express();
 
@@ -31,12 +32,18 @@ mongoose.connect('mongodb://127.0.0.1:27017/userDB');
 //end of second level encrytion 
 
 //third level of encryption
- const userSchema = new mongoose.Schema({
-     email: String,
-     password: String
- });
- userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ['password']}); //['password', 'username] with multiple field//you can read through Plugins in mongoose documents to understand more about it.
-//end of second level encrytion 
+//  const userSchema = new mongoose.Schema({
+//      email: String,
+//      password: String
+//  });
+//  userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ['password']}); //['password', 'username] with multiple field//you can read through Plugins in mongoose documents to understand more about it.
+//end of third level encrytion 
+//fouth level of encryption : hasing(md5)
+const userSchema = new mongoose.Schema({
+    email: String,
+    password: String
+});
+//end of fouth level encrytion 
 
 const User = mongoose.model("User", userSchema);
 
@@ -52,7 +59,7 @@ app.get("/register", function(req, res){
 app.post("/register", function(req, res){
     const newUser = new User({
         email: req.body.username,
-        password: req.body.password
+        password: md5(req.body.password)  //password will encrypt by hash code( md5 code)
     })
     newUser.save().then((success)=>{ //so when you say: save(). encrypt will encrypt your password field
         if(!success){
@@ -65,7 +72,7 @@ app.post("/register", function(req, res){
 
 app.post("/login", function(req,res){
     const username = req.body.username;
-    const password = req.body.password;
+    const password = md5(req.body.password); //password will encrypt by hash code( md5 code). and if it matched. you are logged in
     User.findOne({email: username}).then((foundUser, err)=>{ //when we try to find our document based of the email that the user has entered, Mongoose encrypt will decrypt our password to be able to check it in form and log in.
         if(err){
             console.log(err);
